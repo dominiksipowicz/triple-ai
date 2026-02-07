@@ -44,14 +44,15 @@
     const el = findInput();
     if (!el) return false;
 
-    el.focus();
-    el.innerHTML = '';
-    // Gemini's Quill editor uses <p> blocks
-    const p = document.createElement('p');
-    p.textContent = text;
-    el.appendChild(p);
+    // Only focus if the document already has focus (avoid stealing from other iframes)
+    if (document.hasFocus()) el.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.execCommand('insertText', false, text);
     el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
-    // Also dispatch for Quill's internal listener
     el.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }

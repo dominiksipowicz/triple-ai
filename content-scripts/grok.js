@@ -59,9 +59,9 @@
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
-      // Tiptap/ProseMirror contentEditable — clear and insert via execCommand
-      el.focus();
-      // Select all existing content and replace
+      // Tiptap/ProseMirror contentEditable — use execCommand so editor stays in sync
+      // Only focus if the document already has focus (avoid stealing from other iframes)
+      if (document.hasFocus()) el.focus();
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(el);
