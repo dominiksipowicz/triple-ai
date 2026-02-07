@@ -1,0 +1,86 @@
+{
+  "manifest_version": 3,
+  "name": "Triple AI",
+  "version": "1.0.0",
+  "description": "Synchronize text input across multiple AI chat interfaces and submit prompts simultaneously.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://gemini.google.com/*",
+    "https://grok.com/*",
+    "https://claude.ai/*",
+    "https://www.perplexity.ai/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "strip_iframe_headers",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Triple AI"
+  },
+  "commands": {
+    "open-all-chats": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      },
+      "description": "Open all enabled AI chat tabs"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["content-scripts/chatgpt.js", "content-scripts/sync-engine.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["content-scripts/gemini.js", "content-scripts/sync-engine.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://grok.com/*"],
+      "js": ["content-scripts/grok.js", "content-scripts/sync-engine.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["content-scripts/claude.js", "content-scripts/sync-engine.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://www.perplexity.ai/*"],
+      "js": ["content-scripts/perplexity.js", "content-scripts/sync-engine.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
