@@ -4,6 +4,49 @@
 (() => {
   const LOG_PREFIX = '[TripleAI]';
 
+  // === DEBUG: click/focus/sync event logging (remove when done) ===
+  function _dbgLog(event, target, detail) {
+    const msg = { type: 'DEBUG_LOG', service: location.hostname, event, target, detail };
+    try { chrome.runtime.sendMessage(msg); } catch {}
+  }
+  ['click', 'focus', 'focusin', 'blur', 'focusout'].forEach(evt => {
+    document.addEventListener(evt, (e) => {
+      const tag = e.target?.tagName?.toLowerCase();
+      const id = e.target?.id ? `#${e.target.id}` : '';
+      const cls = e.target?.className ? `.${String(e.target.className).split(' ')[0]}` : '';
+      const role = e.target?.getAttribute?.('role') || '';
+      const ce = e.target?.contentEditable === 'true' ? ' [CE]' : '';
+      _dbgLog(evt.toUpperCase(), `<${tag}${id}${cls}>${ce}`, role ? `role="${role}"` : '');
+    }, true);
+  });
+  // === END DEBUG ===
+
+  // === DEBUG: log sync messages passing through this frame ===
+  const _origAddListener = chrome.runtime.onMessage.addListener.bind(chrome.runtime.onMessage);
+  chrome.runtime.onMessage.addListener = function(fn) {
+    _origAddListener((message, sender, sendResponse) => {
+      if (['SYNC_TEXT', 'DO_SUBMIT', 'SYNC_STATE_CHANGED'].includes(message.type)) {
+        const preview = message.text ? ` text="${message.text.slice(0, 40)}"` : '';
+        _dbgLog(`RECV:${message.type}`, location.hostname, preview);
+      }
+      return fn(message, sender, sendResponse);
+    });
+  };
+  const _origSendMessage = chrome.runtime.sendMessage.bind(chrome.runtime);
+  const _realSendMessage = chrome.runtime.sendMessage;
+  chrome.runtime.sendMessage = function(msg, ...rest) {
+    if (msg && ['TEXT_CHANGED', 'SUBMIT_TRIGGERED', 'REGISTER'].includes(msg.type)) {
+      const preview = msg.text ? ` text="${msg.text.slice(0, 40)}"` : '';
+      _dbgLog(`SEND:${msg.type}`, location.hostname, `${msg.serviceKey || ''}${preview}`);
+    }
+    return _realSendMessage.call(chrome.runtime, msg, ...rest);
+  };
+  // === END DEBUG SYNC ===
+
+  // Prevent double-init from manifest content_scripts + programmatic injection
+  if (window.__tripleAI_syncLoaded) return;
+  window.__tripleAI_syncLoaded = true;
+
   // Wait for the adapter to be available
   function waitForAdapter(callback, retries = 50) {
     if (window.__tripleAI) {
@@ -21,7 +64,7 @@
     const { serviceKey, getText, setText, submit, observeInput, findInput } = adapter;
 
     let syncEnabled = true;
-    let isSyncing = false; // Guard flag to prevent echo loops
+    let lastSyncedText = null; // Track last synced text to prevent echo
     let debounceTimer = null;
     const DEBOUNCE_MS = 80;
 
@@ -49,7 +92,8 @@
 
     // Observe local input changes and broadcast
     observeInput((text) => {
-      if (isSyncing) return; // Don't re-broadcast received text
+      // Don't re-broadcast text we just received from sync
+      if (text === lastSyncedText) return;
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
@@ -67,10 +111,8 @@
         case 'SYNC_TEXT':
           if (!syncEnabled) break;
           console.log(LOG_PREFIX, `[${serviceKey}] Received SYNC_TEXT, length=${message.text.length}`);
-          isSyncing = true;
+          lastSyncedText = message.text;
           setText(message.text);
-          // Reset guard after a short delay to allow DOM to settle
-          setTimeout(() => { isSyncing = false; }, 200);
           break;
 
         case 'DO_SUBMIT':

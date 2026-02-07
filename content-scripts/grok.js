@@ -2,14 +2,17 @@
 // Exposes window.__tripleAI adapter for sync-engine.js
 
 (() => {
+  if (window.__tripleAI) return; // Prevent double-init
   const SERVICE_KEY = 'grok';
 
   const SELECTORS = {
     input: [
+      'div.tiptap[contenteditable="true"]',
+      'div[contenteditable="true"][role="textbox"]',
+      'div[contenteditable="true"]',
       'textarea[aria-label]',
       'textarea[placeholder]',
       'textarea',
-      'div[contenteditable="true"]',
     ],
     sendButton: [
       'button[aria-label="Send"]',
@@ -56,8 +59,15 @@
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
+      // Tiptap/ProseMirror contentEditable — clear and insert via execCommand
       el.focus();
-      el.innerText = text;
+      // Select all existing content and replace
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('insertText', false, text);
       el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
     }
     return true;

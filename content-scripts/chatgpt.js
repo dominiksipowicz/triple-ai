@@ -2,6 +2,7 @@
 // Exposes window.__tripleAI adapter for sync-engine.js
 
 (() => {
+  if (window.__tripleAI) return; // Prevent double-init
   const SERVICE_KEY = 'chatgpt';
 
   const SELECTORS = {
@@ -60,15 +61,15 @@
       }
       el.dispatchEvent(new Event('input', { bubbles: true }));
     } else {
-      // contenteditable
-      el.focus();
-      // Clear existing content
-      el.innerHTML = '';
-      // Set new text as a paragraph (ChatGPT uses <p> tags)
-      const p = document.createElement('p');
-      p.textContent = text;
-      el.appendChild(p);
-      // Dispatch input event for React
+      // contenteditable (ProseMirror) — use execCommand so the editor stays in sync
+      // Only focus if the document already has focus (avoid stealing from other iframes)
+      if (document.hasFocus()) el.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('insertText', false, text);
       el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
     }
     return true;

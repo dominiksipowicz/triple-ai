@@ -1,4 +1,4 @@
-// Multi-AI Chat Synchronizer - Service Worker
+// TripleAI - Service Worker
 // Coordinates sync between AI chat iframes on the dashboard page
 
 const DEFAULT_SERVICES = {
@@ -201,6 +201,17 @@ function broadcastSubmit(senderTabId, senderFrameId) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id;
   const frameId = sender.frameId ?? 0;
+
+  // === DEBUG: forward logs to local server (remove when done) ===
+  if (message.type === 'DEBUG_LOG') {
+    fetch('http://127.0.0.1:7777/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    }).catch(() => {});
+    return;
+  }
+  // === END DEBUG ===
 
   switch (message.type) {
     case 'REGISTER':

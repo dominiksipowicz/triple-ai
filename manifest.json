@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Multi-AI Chat Synchronizer",
+  "name": "TripleAI",
   "version": "1.0.0",
-  "description": "Synchronize text input across multiple AI chat interfaces and submit prompts simultaneously.",
+  "description": "TripleAI — display multiple AI chats side-by-side, synchronize input and submit simultaneously.",
   "permissions": [
     "storage",
     "tabs",
@@ -18,7 +18,8 @@
     "https://*.google.com/*",
     "https://grok.com/*",
     "https://claude.ai/*",
-    "https://www.perplexity.ai/*"
+    "https://www.perplexity.ai/*",
+    "http://127.0.0.1:7777/*"
   ],
   "declarative_net_request": {
     "rule_resources": [
@@ -38,7 +39,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "Multi-AI Chat Synchronizer"
+    "default_title": "TripleAI"
   },
   "commands": {
     "open-all-chats": {

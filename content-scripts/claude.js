@@ -2,6 +2,7 @@
 // Exposes window.__tripleAI adapter for sync-engine.js
 
 (() => {
+  if (window.__tripleAI) return; // Prevent double-init
   const SERVICE_KEY = 'claude';
 
   const SELECTORS = {
