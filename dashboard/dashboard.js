@@ -1,8 +1,8 @@
 // Dashboard - Full-screen split-pane iframe layout
 
 const SERVICE_META = {
-  gemini:     { name: 'Gemini',     icon: 'G', url: 'https://gemini.google.com/app' },
   chatgpt:    { name: 'ChatGPT',    icon: 'C', url: 'https://chatgpt.com/' },
+  gemini:     { name: 'Gemini',     icon: 'G', url: 'https://gemini.google.com/app' },
   grok:       { name: 'Grok',       icon: 'X', url: 'https://grok.com/' },
   claude:     { name: 'Claude',     icon: 'A', url: 'https://claude.ai/new' },
   perplexity: { name: 'Perplexity', icon: 'P', url: 'https://www.perplexity.ai/' },
@@ -10,7 +10,17 @@ const SERVICE_META = {
 
 const SERVICE_ORDER = ['chatgpt', 'gemini', 'grok', 'claude', 'perplexity'];
 
+// Map hostnames to their adapter script files
+const HOST_ADAPTERS = {
+  'chatgpt.com':       'content-scripts/chatgpt.js',
+  'gemini.google.com': 'content-scripts/gemini.js',
+  'grok.com':          'content-scripts/grok.js',
+  'claude.ai':         'content-scripts/claude.js',
+  'www.perplexity.ai': 'content-scripts/perplexity.js',
+};
+
 let services = {};
+let injectedFrames = new Set(); // Track injected "frameId" to avoid double-injection
 
 // --- Init ---
 
@@ -30,6 +40,7 @@ async function init() {
 function renderIframes() {
   const container = document.getElementById('iframeContainer');
   container.innerHTML = '';
+  injectedFrames.clear();
 
   const enabledKeys = SERVICE_ORDER.filter((key) => services[key]?.enabled);
 
@@ -49,8 +60,6 @@ function renderIframes() {
     return;
   }
 
-  let loadedCount = 0;
-
   for (const key of enabledKeys) {
     const meta = SERVICE_META[key];
 
@@ -69,36 +78,73 @@ function renderIframes() {
 
     container.appendChild(pane);
 
-    // When iframe loads, request script injection and focus ChatGPT
+    // When iframe loads, inject content scripts directly
     const iframe = pane.querySelector(`#iframe-${key}`);
     iframe.addEventListener('load', () => {
-      loadedCount++;
-      console.log(`[TripleAI] Iframe loaded: ${key} (${loadedCount}/${enabledKeys.length})`);
-      requestInjection();
+      console.log(`[TripleAI] Iframe loaded: ${key}`);
+      injectContentScripts();
 
-      // Auto-focus ChatGPT iframe so user can start typing there
+      // Auto-focus ChatGPT iframe
       if (key === 'chatgpt') {
         iframe.focus();
       }
     });
   }
 
-  // Also request injection after a delay as fallback
-  setTimeout(requestInjection, 3000);
-  setTimeout(requestInjection, 6000);
-  setTimeout(requestInjection, 10000);
+  // Fallback injection retries
+  setTimeout(injectContentScripts, 3000);
+  setTimeout(injectContentScripts, 6000);
+  setTimeout(injectContentScripts, 10000);
 }
 
-// --- Request content script injection from service worker ---
+// --- Direct content script injection ---
+// The dashboard page itself injects scripts into iframes using chrome.scripting API.
+// This is more reliable than going through the service worker, which can be suspended.
 
-function requestInjection() {
-  chrome.runtime.sendMessage({ type: 'INJECT_INTO_FRAMES' }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.warn('[TripleAI] Injection request failed:', chrome.runtime.lastError.message);
-    } else {
-      console.log('[TripleAI] Injection request completed');
+async function injectContentScripts() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
+    if (!frames) return;
+
+    for (const frame of frames) {
+      if (frame.frameId === 0) continue; // Skip top-level (dashboard itself)
+      if (injectedFrames.has(frame.frameId)) continue; // Already injected
+
+      let hostname;
+      try {
+        hostname = new URL(frame.url).hostname;
+      } catch {
+        continue;
+      }
+
+      const adapter = HOST_ADAPTERS[hostname];
+      if (!adapter) continue;
+
+      try {
+        // Inject site-specific adapter
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, frameIds: [frame.frameId] },
+          files: [adapter],
+        });
+
+        // Inject shared sync engine
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, frameIds: [frame.frameId] },
+          files: ['content-scripts/sync-engine.js'],
+        });
+
+        injectedFrames.add(frame.frameId);
+        console.log(`[TripleAI] Injected into ${hostname} (frame ${frame.frameId})`);
+      } catch (e) {
+        console.warn(`[TripleAI] Failed to inject into ${hostname} (frame ${frame.frameId}):`, e.message);
+      }
     }
-  });
+  } catch (e) {
+    console.warn('[TripleAI] Injection scan failed:', e.message);
+  }
 }
 
 // --- Sync toggle ---
@@ -120,13 +166,6 @@ function initSettings() {
 
   openBtn.addEventListener('click', openSettings);
   closeBtn.addEventListener('click', closeSettings);
-
-  // Click backdrop to close
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay || e.target === overlay.querySelector('::before')) {
-      closeSettings();
-    }
-  });
 
   // Close on Escape
   document.addEventListener('keydown', (e) => {
@@ -176,7 +215,6 @@ function renderServiceToggles() {
       saveServicesAndRefresh();
     });
 
-    // Click row to toggle (except on the toggle itself)
     row.addEventListener('click', (e) => {
       if (e.target === checkbox || e.target.classList.contains('toggle-slider')) return;
       checkbox.checked = !checkbox.checked;
