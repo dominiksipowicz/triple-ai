@@ -7,12 +7,16 @@
       "responseHeaders": [
         { "header": "X-Frame-Options", "operation": "remove" },
         { "header": "Content-Security-Policy", "operation": "remove" },
-        { "header": "X-Content-Type-Options", "operation": "remove" }
+        { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+        { "header": "X-Content-Type-Options", "operation": "remove" },
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
       ]
     },
     "condition": {
       "urlFilter": "||chatgpt.com",
-      "resourceTypes": ["sub_frame"]
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
     }
   },
   {
@@ -23,12 +27,16 @@
       "responseHeaders": [
         { "header": "X-Frame-Options", "operation": "remove" },
         { "header": "Content-Security-Policy", "operation": "remove" },
-        { "header": "X-Content-Type-Options", "operation": "remove" }
+        { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+        { "header": "X-Content-Type-Options", "operation": "remove" },
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
       ]
     },
     "condition": {
       "urlFilter": "||gemini.google.com",
-      "resourceTypes": ["sub_frame"]
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
     }
   },
   {
@@ -39,12 +47,16 @@
       "responseHeaders": [
         { "header": "X-Frame-Options", "operation": "remove" },
         { "header": "Content-Security-Policy", "operation": "remove" },
-        { "header": "X-Content-Type-Options", "operation": "remove" }
+        { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+        { "header": "X-Content-Type-Options", "operation": "remove" },
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
       ]
     },
     "condition": {
       "urlFilter": "||grok.com",
-      "resourceTypes": ["sub_frame"]
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
     }
   },
   {
@@ -55,12 +67,16 @@
       "responseHeaders": [
         { "header": "X-Frame-Options", "operation": "remove" },
         { "header": "Content-Security-Policy", "operation": "remove" },
-        { "header": "X-Content-Type-Options", "operation": "remove" }
+        { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+        { "header": "X-Content-Type-Options", "operation": "remove" },
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
       ]
     },
     "condition": {
       "urlFilter": "||claude.ai",
-      "resourceTypes": ["sub_frame"]
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
     }
   },
   {
@@ -71,12 +87,48 @@
       "responseHeaders": [
         { "header": "X-Frame-Options", "operation": "remove" },
         { "header": "Content-Security-Policy", "operation": "remove" },
-        { "header": "X-Content-Type-Options", "operation": "remove" }
+        { "header": "Content-Security-Policy-Report-Only", "operation": "remove" },
+        { "header": "X-Content-Type-Options", "operation": "remove" },
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
       ]
     },
     "condition": {
       "urlFilter": "||www.perplexity.ai",
-      "resourceTypes": ["sub_frame"]
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||oaiusercontent.com",
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        { "header": "Cross-Origin-Opener-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Embedder-Policy", "operation": "remove" },
+        { "header": "Cross-Origin-Resource-Policy", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||openai.com",
+      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
     }
   }
 ]

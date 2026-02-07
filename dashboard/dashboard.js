@@ -62,7 +62,6 @@ function renderIframes() {
         id="iframe-${key}"
         src="${meta.url}"
         allow="clipboard-read; clipboard-write"
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-popups-to-escape-sandbox"
       ></iframe>
     `;
 

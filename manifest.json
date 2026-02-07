@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Triple AI",
+  "name": "Multi-AI Chat Synchronizer",
   "version": "1.0.0",
   "description": "Synchronize text input across multiple AI chat interfaces and submit prompts simultaneously.",
   "permissions": [
@@ -12,6 +12,7 @@
   ],
   "host_permissions": [
     "https://chatgpt.com/*",
+    "https://*.openai.com/*",
     "https://gemini.google.com/*",
     "https://grok.com/*",
     "https://claude.ai/*",
@@ -35,7 +36,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "Triple AI"
+    "default_title": "Multi-AI Chat Synchronizer"
   },
   "commands": {
     "open-all-chats": {
@@ -51,31 +52,36 @@
       "matches": ["https://chatgpt.com/*"],
       "js": ["content-scripts/chatgpt.js", "content-scripts/sync-engine.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     },
     {
       "matches": ["https://gemini.google.com/*"],
       "js": ["content-scripts/gemini.js", "content-scripts/sync-engine.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     },
     {
       "matches": ["https://grok.com/*"],
       "js": ["content-scripts/grok.js", "content-scripts/sync-engine.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     },
     {
       "matches": ["https://claude.ai/*"],
       "js": ["content-scripts/claude.js", "content-scripts/sync-engine.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     },
     {
       "matches": ["https://www.perplexity.ai/*"],
       "js": ["content-scripts/perplexity.js", "content-scripts/sync-engine.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "icons": {
