@@ -2,18 +2,27 @@
 // Coordinates sync between AI chat iframes on the dashboard page
 
 const DEFAULT_SERVICES = {
-  gemini: { name: 'Gemini', url: 'https://gemini.google.com/app', enabled: true },
   chatgpt: { name: 'ChatGPT', url: 'https://chatgpt.com/', enabled: true },
+  gemini: { name: 'Gemini', url: 'https://gemini.google.com/app', enabled: true },
   grok: { name: 'Grok', url: 'https://grok.com/', enabled: true },
   claude: { name: 'Claude', url: 'https://claude.ai/new', enabled: false },
   perplexity: { name: 'Perplexity', url: 'https://www.perplexity.ai/', enabled: false },
 };
 
+// Map hostnames to service keys and their adapter script files
+const HOST_TO_SERVICE = {
+  'chatgpt.com': { key: 'chatgpt', adapter: 'content-scripts/chatgpt.js' },
+  'gemini.google.com': { key: 'gemini', adapter: 'content-scripts/gemini.js' },
+  'grok.com': { key: 'grok', adapter: 'content-scripts/grok.js' },
+  'claude.ai': { key: 'claude', adapter: 'content-scripts/claude.js' },
+  'www.perplexity.ai': { key: 'perplexity', adapter: 'content-scripts/perplexity.js' },
+};
+
 // State
-// Each entry: { tabId, frameId, serviceKey }
-let managedFrames = [];
+let managedFrames = []; // { tabId, frameId, serviceKey }
 let syncEnabled = true;
 let dashboardTabId = null;
+let injectedFrames = new Set(); // Track "tabId:frameId" to avoid double-injection
 
 // --- Storage helpers ---
 
@@ -34,11 +43,11 @@ async function initState() {
 // --- Frame management ---
 
 function registerFrame(tabId, frameId, serviceKey) {
-  // Remove any existing entry for this frame
   managedFrames = managedFrames.filter(
     (f) => !(f.tabId === tabId && f.frameId === frameId)
   );
   managedFrames.push({ tabId, frameId, serviceKey });
+  console.log(`[TripleAI SW] Registered frame ${frameId} in tab ${tabId} as "${serviceKey}". Total: ${managedFrames.length}`);
   notifyDashboard();
 }
 
@@ -46,11 +55,72 @@ function unregisterFrame(tabId, frameId) {
   managedFrames = managedFrames.filter(
     (f) => !(f.tabId === tabId && f.frameId === frameId)
   );
+  injectedFrames.delete(`${tabId}:${frameId}`);
   notifyDashboard();
 }
 
 function unregisterAllForTab(tabId) {
   managedFrames = managedFrames.filter((f) => f.tabId !== tabId);
+  // Clean up injectedFrames for this tab
+  for (const key of [...injectedFrames]) {
+    if (key.startsWith(`${tabId}:`)) injectedFrames.delete(key);
+  }
+}
+
+// --- Programmatic script injection ---
+
+async function injectIntoFrame(tabId, frameId, hostname) {
+  const frameKey = `${tabId}:${frameId}`;
+  if (injectedFrames.has(frameKey)) {
+    console.log(`[TripleAI SW] Already injected into frame ${frameKey}, skipping`);
+    return;
+  }
+
+  const service = HOST_TO_SERVICE[hostname];
+  if (!service) return;
+
+  console.log(`[TripleAI SW] Injecting scripts into frame ${frameId} (tab ${tabId}) for ${service.key}`);
+
+  try {
+    // Inject the site-specific adapter first
+    await chrome.scripting.executeScript({
+      target: { tabId, frameIds: [frameId] },
+      files: [service.adapter],
+    });
+
+    // Then inject the sync engine
+    await chrome.scripting.executeScript({
+      target: { tabId, frameIds: [frameId] },
+      files: ['content-scripts/sync-engine.js'],
+    });
+
+    injectedFrames.add(frameKey);
+    console.log(`[TripleAI SW] Successfully injected into ${service.key} (frame ${frameId})`);
+  } catch (e) {
+    console.warn(`[TripleAI SW] Failed to inject into frame ${frameId}:`, e.message);
+  }
+}
+
+// Scan all frames in a tab and inject into matching ones
+async function injectIntoAllFrames(tabId) {
+  try {
+    const frames = await chrome.webNavigation.getAllFrames({ tabId });
+    if (!frames) return;
+
+    for (const frame of frames) {
+      if (frame.frameId === 0) continue; // Skip top-level frame (dashboard itself)
+      try {
+        const url = new URL(frame.url);
+        if (HOST_TO_SERVICE[url.hostname]) {
+          await injectIntoFrame(tabId, frame.frameId, url.hostname);
+        }
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+  } catch (e) {
+    console.warn('[TripleAI SW] Failed to enumerate frames:', e.message);
+  }
 }
 
 // --- Dashboard ---
@@ -98,7 +168,6 @@ function broadcastText(senderTabId, senderFrameId, text) {
   if (!syncEnabled) return;
 
   for (const frame of managedFrames) {
-    // Don't send back to the sender
     if (frame.tabId === senderTabId && frame.frameId === senderFrameId) continue;
 
     chrome.tabs.sendMessage(
@@ -170,7 +239,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       syncEnabled = message.enabled;
       chrome.storage.local.set({ syncEnabled });
       notifyDashboard();
-      // Notify all content scripts in their specific frames
       for (const frame of managedFrames) {
         chrome.tabs.sendMessage(
           frame.tabId,
@@ -181,17 +249,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ syncEnabled });
       break;
 
+    case 'INJECT_INTO_FRAMES':
+      // Dashboard requests injection after iframes are created
+      if (tabId) {
+        injectIntoAllFrames(tabId).then(() => sendResponse({ ok: true }));
+      } else {
+        // Fallback: use dashboardTabId
+        if (dashboardTabId) {
+          injectIntoAllFrames(dashboardTabId).then(() => sendResponse({ ok: true }));
+        }
+      }
+      return true; // async response
+
     case 'SAVE_SERVICES':
       chrome.storage.local.set({ services: message.services }).then(() => {
         sendResponse({ ok: true });
       });
-      return true; // async response
+      return true;
 
     case 'GET_SERVICES':
       getServices().then((svcs) => {
         sendResponse({ services: svcs });
       });
-      return true; // async response
+      return true;
+  }
+});
+
+// --- Automatic injection when frames navigate ---
+
+chrome.webNavigation.onCompleted.addListener((details) => {
+  // Skip top-level frames
+  if (details.frameId === 0) return;
+
+  try {
+    const url = new URL(details.url);
+    if (HOST_TO_SERVICE[url.hostname]) {
+      console.log(`[TripleAI SW] Frame navigation completed: ${url.hostname} (tab ${details.tabId}, frame ${details.frameId})`);
+      injectIntoFrame(details.tabId, details.frameId, url.hostname);
+    }
+  } catch {
+    // Invalid URL
   }
 });
 

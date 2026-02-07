@@ -8,7 +8,7 @@ const SERVICE_META = {
   perplexity: { name: 'Perplexity', icon: 'P', url: 'https://www.perplexity.ai/' },
 };
 
-const SERVICE_ORDER = ['gemini', 'chatgpt', 'grok', 'claude', 'perplexity'];
+const SERVICE_ORDER = ['chatgpt', 'gemini', 'grok', 'claude', 'perplexity'];
 
 let services = {};
 
@@ -49,6 +49,8 @@ function renderIframes() {
     return;
   }
 
+  let loadedCount = 0;
+
   for (const key of enabledKeys) {
     const meta = SERVICE_META[key];
 
@@ -66,7 +68,37 @@ function renderIframes() {
     `;
 
     container.appendChild(pane);
+
+    // When iframe loads, request script injection and focus ChatGPT
+    const iframe = pane.querySelector(`#iframe-${key}`);
+    iframe.addEventListener('load', () => {
+      loadedCount++;
+      console.log(`[TripleAI] Iframe loaded: ${key} (${loadedCount}/${enabledKeys.length})`);
+      requestInjection();
+
+      // Auto-focus ChatGPT iframe so user can start typing there
+      if (key === 'chatgpt') {
+        iframe.focus();
+      }
+    });
   }
+
+  // Also request injection after a delay as fallback
+  setTimeout(requestInjection, 3000);
+  setTimeout(requestInjection, 6000);
+  setTimeout(requestInjection, 10000);
+}
+
+// --- Request content script injection from service worker ---
+
+function requestInjection() {
+  chrome.runtime.sendMessage({ type: 'INJECT_INTO_FRAMES' }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.warn('[TripleAI] Injection request failed:', chrome.runtime.lastError.message);
+    } else {
+      console.log('[TripleAI] Injection request completed');
+    }
+  });
 }
 
 // --- Sync toggle ---
