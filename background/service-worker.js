@@ -249,18 +249,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ syncEnabled });
       break;
 
-    case 'INJECT_INTO_FRAMES':
-      // Dashboard requests injection after iframes are created
-      if (tabId) {
-        injectIntoAllFrames(tabId).then(() => sendResponse({ ok: true }));
-      } else {
-        // Fallback: use dashboardTabId
-        if (dashboardTabId) {
-          injectIntoAllFrames(dashboardTabId).then(() => sendResponse({ ok: true }));
-        }
-      }
-      return true; // async response
-
     case 'SAVE_SERVICES':
       chrome.storage.local.set({ services: message.services }).then(() => {
         sendResponse({ ok: true });

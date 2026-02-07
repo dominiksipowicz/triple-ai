@@ -10,17 +10,7 @@ const SERVICE_META = {
 
 const SERVICE_ORDER = ['chatgpt', 'gemini', 'grok', 'claude', 'perplexity'];
 
-// Map hostnames to their adapter script files
-const HOST_ADAPTERS = {
-  'chatgpt.com':       'content-scripts/chatgpt.js',
-  'gemini.google.com': 'content-scripts/gemini.js',
-  'grok.com':          'content-scripts/grok.js',
-  'claude.ai':         'content-scripts/claude.js',
-  'www.perplexity.ai': 'content-scripts/perplexity.js',
-};
-
 let services = {};
-let injectedFrames = new Set(); // Track injected "frameId" to avoid double-injection
 
 // --- Init ---
 
@@ -40,7 +30,6 @@ async function init() {
 function renderIframes() {
   const container = document.getElementById('iframeContainer');
   container.innerHTML = '';
-  injectedFrames.clear();
 
   const enabledKeys = SERVICE_ORDER.filter((key) => services[key]?.enabled);
 
@@ -78,72 +67,14 @@ function renderIframes() {
 
     container.appendChild(pane);
 
-    // When iframe loads, inject content scripts directly
     const iframe = pane.querySelector(`#iframe-${key}`);
     iframe.addEventListener('load', () => {
       console.log(`[TripleAI] Iframe loaded: ${key}`);
-      injectContentScripts();
-
-      // Auto-focus ChatGPT iframe
+      // Auto-focus ChatGPT iframe so user can start typing
       if (key === 'chatgpt') {
         iframe.focus();
       }
     });
-  }
-
-  // Fallback injection retries
-  setTimeout(injectContentScripts, 3000);
-  setTimeout(injectContentScripts, 6000);
-  setTimeout(injectContentScripts, 10000);
-}
-
-// --- Direct content script injection ---
-// The dashboard page itself injects scripts into iframes using chrome.scripting API.
-// This is more reliable than going through the service worker, which can be suspended.
-
-async function injectContentScripts() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) return;
-
-    const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
-    if (!frames) return;
-
-    for (const frame of frames) {
-      if (frame.frameId === 0) continue; // Skip top-level (dashboard itself)
-      if (injectedFrames.has(frame.frameId)) continue; // Already injected
-
-      let hostname;
-      try {
-        hostname = new URL(frame.url).hostname;
-      } catch {
-        continue;
-      }
-
-      const adapter = HOST_ADAPTERS[hostname];
-      if (!adapter) continue;
-
-      try {
-        // Inject site-specific adapter
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id, frameIds: [frame.frameId] },
-          files: [adapter],
-        });
-
-        // Inject shared sync engine
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id, frameIds: [frame.frameId] },
-          files: ['content-scripts/sync-engine.js'],
-        });
-
-        injectedFrames.add(frame.frameId);
-        console.log(`[TripleAI] Injected into ${hostname} (frame ${frame.frameId})`);
-      } catch (e) {
-        console.warn(`[TripleAI] Failed to inject into ${hostname} (frame ${frame.frameId}):`, e.message);
-      }
-    }
-  } catch (e) {
-    console.warn('[TripleAI] Injection scan failed:', e.message);
   }
 }
 
