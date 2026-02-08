@@ -4,6 +4,10 @@ A Chrome Extension that displays multiple AI chats side-by-side in a single page
 
 <img width="1795" height="1198" alt="CleanShot 2026-02-08 at 00 59 52" src="https://github.com/user-attachments/assets/57a0ad7e-13bb-48a5-b6e8-17b8a719a498" />
 
+## All available AI chats
+
+<img width="2875" height="1222" alt="CleanShot 2026-02-08 at 02 34 51" src="https://github.com/user-attachments/assets/63a90811-ed89-44ef-80de-cf8446e38dad" />
+
 
 ## Features
 
@@ -16,8 +20,15 @@ A Chrome Extension that displays multiple AI chats side-by-side in a single page
   - Google Gemini (`gemini.google.com/app`)
   - Grok (`grok.com`)
   - Claude (`claude.ai`)
+  - [v0](https://v0.app/) (`v0.app`) - for development
 - **Sync toggle** — Disable sync for independent follow-up messages
 - **Keyboard shortcut** — `Ctrl+Shift+E` (Mac: `⌘+Shift+E`) to open the dashboard
+
+## Missing feature? Just vibe code it yourself in v0
+
+[![Open in v0](https://v0.app/chat-static/button.svg)](https://v0.app/chat/api/open?title=Open+in+v0&prompt=This+code+is+a+Chrome+Extension+that+displays+multiple+AI+chats+side-by-side+in+a+single+page+and+synchronizes+text+input+across+all+of+them.+I+want+to+modify+it.+This+is+not+Next.js+application.+This+is+not+a+website+but+a+script+for+Chrome+Extension.+Do+not+show+preview+UI+or+build+the+project.+Wait+for+my+list+of+changes.+Read+README.md.&url=https%3A%2F%2Fgithub.com%2Fdominiksipowicz%2Ftriple-ai)
+
+You can ask v0 to open this repository make changes and you can follow below installation steps with your custom `triple-ai`
 
 ## Installation
 
