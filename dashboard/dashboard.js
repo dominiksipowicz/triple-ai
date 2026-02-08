@@ -57,6 +57,10 @@ function renderIframes() {
     pane.dataset.service = key;
 
     pane.innerHTML = `
+      <div class="pane-header">
+        <span class="pane-header-name">${meta.name}</span>
+        <div class="pane-header-dot ${key}">${meta.icon}</div>
+      </div>
       <iframe
         class="pane-iframe"
         id="iframe-${key}"

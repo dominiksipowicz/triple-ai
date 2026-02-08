@@ -3,7 +3,10 @@
     "allow": [
       "Bash(git init:*)",
       "WebFetch(domain:github.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(file:*)",
+      "Bash(wc:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
