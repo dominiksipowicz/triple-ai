@@ -4,45 +4,6 @@
 (() => {
   const LOG_PREFIX = '[TripleAI]';
 
-  // === DEBUG: click/focus/sync event logging (remove when done) ===
-  function _dbgLog(event, target, detail) {
-    const msg = { type: 'DEBUG_LOG', service: location.hostname, event, target, detail };
-    try { chrome.runtime.sendMessage(msg); } catch {}
-  }
-  ['click', 'focus', 'focusin', 'blur', 'focusout'].forEach(evt => {
-    document.addEventListener(evt, (e) => {
-      const tag = e.target?.tagName?.toLowerCase();
-      const id = e.target?.id ? `#${e.target.id}` : '';
-      const cls = e.target?.className ? `.${String(e.target.className).split(' ')[0]}` : '';
-      const role = e.target?.getAttribute?.('role') || '';
-      const ce = e.target?.contentEditable === 'true' ? ' [CE]' : '';
-      _dbgLog(evt.toUpperCase(), `<${tag}${id}${cls}>${ce}`, role ? `role="${role}"` : '');
-    }, true);
-  });
-  // === END DEBUG ===
-
-  // === DEBUG: log sync messages passing through this frame ===
-  const _origAddListener = chrome.runtime.onMessage.addListener.bind(chrome.runtime.onMessage);
-  chrome.runtime.onMessage.addListener = function(fn) {
-    _origAddListener((message, sender, sendResponse) => {
-      if (['SYNC_TEXT', 'DO_SUBMIT', 'SYNC_STATE_CHANGED'].includes(message.type)) {
-        const preview = message.text ? ` text="${message.text.slice(0, 40)}"` : '';
-        _dbgLog(`RECV:${message.type}`, location.hostname, preview);
-      }
-      return fn(message, sender, sendResponse);
-    });
-  };
-  const _origSendMessage = chrome.runtime.sendMessage.bind(chrome.runtime);
-  const _realSendMessage = chrome.runtime.sendMessage;
-  chrome.runtime.sendMessage = function(msg, ...rest) {
-    if (msg && ['TEXT_CHANGED', 'SUBMIT_TRIGGERED', 'REGISTER'].includes(msg.type)) {
-      const preview = msg.text ? ` text="${msg.text.slice(0, 40)}"` : '';
-      _dbgLog(`SEND:${msg.type}`, location.hostname, `${msg.serviceKey || ''}${preview}`);
-    }
-    return _realSendMessage.call(chrome.runtime, msg, ...rest);
-  };
-  // === END DEBUG SYNC ===
-
   // Prevent double-init from manifest content_scripts + programmatic injection
   if (window.__tripleAI_syncLoaded) return;
   window.__tripleAI_syncLoaded = true;
@@ -70,7 +31,7 @@
 
     console.log(LOG_PREFIX, `Sync engine starting for "${serviceKey}" in frame`, window.location.href);
 
-    // Register with service worker
+    // Register with service worker — only activate inside dashboard tab
     try {
       chrome.runtime.sendMessage(
         { type: 'REGISTER', serviceKey },
@@ -79,10 +40,15 @@
             console.warn(LOG_PREFIX, 'Registration failed:', chrome.runtime.lastError.message);
             return;
           }
+          if (!response?.isDashboard) {
+            console.log(LOG_PREFIX, `"${serviceKey}" not in dashboard tab, sync disabled`);
+            return;
+          }
           if (response?.syncEnabled !== undefined) {
             syncEnabled = response.syncEnabled;
           }
           console.log(LOG_PREFIX, `Registered "${serviceKey}", sync=${syncEnabled}`);
+          startSync();
         }
       );
     } catch (e) {
@@ -90,79 +56,71 @@
       return;
     }
 
-    // Observe local input changes and broadcast
-    observeInput((text) => {
-      // Don't re-broadcast text we just received from sync
-      if (text === lastSyncedText) return;
-      // Don't broadcast empty text — avoids triggering submit on other AIs
-      if (!text || !text.trim()) return;
+    // All sync logic is deferred until we confirm we're in the dashboard tab
+    function startSync() {
+      // Observe local input changes and broadcast
+      observeInput((text) => {
+        if (text === lastSyncedText) return;
+        if (!text || !text.trim()) return;
 
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        try {
-          chrome.runtime.sendMessage({ type: 'TEXT_CHANGED', text });
-        } catch (e) {
-          console.warn(LOG_PREFIX, 'Failed to send TEXT_CHANGED:', e);
-        }
-      }, DEBOUNCE_MS);
-    });
-
-    // Listen for messages from service worker
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      switch (message.type) {
-        case 'SYNC_TEXT':
-          if (!syncEnabled) break;
-          if (!message.text && !message.text?.trim()) break; // Skip empty syncs
-          console.log(LOG_PREFIX, `[${serviceKey}] Received SYNC_TEXT, length=${message.text.length}`);
-          lastSyncedText = message.text;
-          setText(message.text);
-          break;
-
-        case 'DO_SUBMIT':
-          if (!syncEnabled) break;
-          console.log(LOG_PREFIX, `[${serviceKey}] Received DO_SUBMIT`);
-          // Small delay to let text sync settle first
-          setTimeout(() => submit(), 100);
-          break;
-
-        case 'SYNC_STATE_CHANGED':
-          syncEnabled = message.syncEnabled;
-          console.log(LOG_PREFIX, `[${serviceKey}] Sync state changed to ${syncEnabled}`);
-          break;
-      }
-    });
-
-    // Intercept Enter key for synchronized submit
-    function handleKeydown(e) {
-      if (!syncEnabled) return;
-
-      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        // Small delay to let the current site process the Enter naturally
-        setTimeout(() => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
           try {
-            chrome.runtime.sendMessage({ type: 'SUBMIT_TRIGGERED' });
-          } catch (err) {
-            console.warn(LOG_PREFIX, 'Failed to send SUBMIT_TRIGGERED:', err);
+            chrome.runtime.sendMessage({ type: 'TEXT_CHANGED', text });
+          } catch (e) {
+            console.warn(LOG_PREFIX, 'Failed to send TEXT_CHANGED:', e);
           }
-        }, 50);
+        }, DEBOUNCE_MS);
+      });
+
+      // Listen for messages from service worker
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        switch (message.type) {
+          case 'SYNC_TEXT':
+            if (!syncEnabled) break;
+            if (!message.text || !message.text.trim()) break;
+            lastSyncedText = message.text;
+            setText(message.text);
+            break;
+
+          case 'DO_SUBMIT':
+            if (!syncEnabled) break;
+            setTimeout(() => submit(), 100);
+            break;
+
+          case 'SYNC_STATE_CHANGED':
+            syncEnabled = message.syncEnabled;
+            break;
+        }
+      });
+
+      // Intercept Enter key for synchronized submit
+      function handleKeydown(e) {
+        if (!syncEnabled) return;
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          setTimeout(() => {
+            try {
+              chrome.runtime.sendMessage({ type: 'SUBMIT_TRIGGERED' });
+            } catch (err) {}
+          }, 50);
+        }
       }
-    }
 
-    // Attach Enter key listener — polls to re-attach after SPA navigation
-    let enterListenerEl = null;
-    function attachEnterListener() {
-      const el = findInput();
-      if (el && el !== enterListenerEl) {
-        if (enterListenerEl) enterListenerEl.removeEventListener('keydown', handleKeydown, true);
-        el.addEventListener('keydown', handleKeydown, true);
-        enterListenerEl = el;
-        console.log(LOG_PREFIX, `[${serviceKey}] Enter listener attached to input`);
+      // Attach Enter key listener — polls to re-attach after SPA navigation
+      let enterListenerEl = null;
+      function attachEnterListener() {
+        const el = findInput();
+        if (el && el !== enterListenerEl) {
+          if (enterListenerEl) enterListenerEl.removeEventListener('keydown', handleKeydown, true);
+          el.addEventListener('keydown', handleKeydown, true);
+          enterListenerEl = el;
+        }
       }
+
+      setInterval(attachEnterListener, 500);
+      attachEnterListener();
+
+      console.log(LOG_PREFIX, `Sync engine active for "${serviceKey}"`);
     }
-
-    setInterval(attachEnterListener, 500);
-    attachEnterListener();
-
-    console.log(LOG_PREFIX, `Sync engine loaded for "${serviceKey}"`);
   });
 })();

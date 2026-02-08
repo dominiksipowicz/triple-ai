@@ -16,7 +16,7 @@
     },
     "condition": {
       "urlFilter": "||chatgpt.com",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   },
   {
@@ -36,7 +36,7 @@
     },
     "condition": {
       "urlFilter": "||gemini.google.com",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   },
   {
@@ -56,7 +56,7 @@
     },
     "condition": {
       "urlFilter": "||grok.com",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   },
   {
@@ -76,7 +76,7 @@
     },
     "condition": {
       "urlFilter": "||claude.ai",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   },
   {
@@ -96,7 +96,7 @@
     },
     "condition": {
       "urlFilter": "||www.perplexity.ai",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   },
   {
@@ -112,7 +112,7 @@
     },
     "condition": {
       "urlFilter": "||oaiusercontent.com",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   },
   {
@@ -128,7 +128,7 @@
     },
     "condition": {
       "urlFilter": "||openai.com",
-      "resourceTypes": ["sub_frame", "stylesheet", "script", "image", "font", "xmlhttprequest", "other"]
+      "resourceTypes": ["sub_frame"]
     }
   }
 ]

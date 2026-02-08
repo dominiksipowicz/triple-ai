@@ -202,22 +202,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const tabId = sender.tab?.id;
   const frameId = sender.frameId ?? 0;
 
-  // === DEBUG: forward logs to local server (remove when done) ===
-  if (message.type === 'DEBUG_LOG') {
-    fetch('http://127.0.0.1:7777/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    }).catch(() => {});
-    return;
-  }
-  // === END DEBUG ===
-
   switch (message.type) {
     case 'REGISTER':
       if (tabId && message.serviceKey) {
-        registerFrame(tabId, frameId, message.serviceKey);
-        sendResponse({ syncEnabled });
+        // Check if the sender is in the dashboard tab by URL (survives extension reloads)
+        const dashboardUrl = chrome.runtime.getURL('dashboard/');
+        const isDashboard = sender.tab?.url?.startsWith(dashboardUrl);
+        if (isDashboard) {
+          // Keep dashboardTabId in sync
+          if (dashboardTabId !== tabId) dashboardTabId = tabId;
+          registerFrame(tabId, frameId, message.serviceKey);
+        }
+        sendResponse({ syncEnabled, isDashboard });
       }
       break;
 

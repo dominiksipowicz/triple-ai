@@ -18,8 +18,7 @@
     "https://*.google.com/*",
     "https://grok.com/*",
     "https://claude.ai/*",
-    "https://www.perplexity.ai/*",
-    "http://127.0.0.1:7777/*"
+    "https://www.perplexity.ai/*"
   ],
   "declarative_net_request": {
     "rule_resources": [

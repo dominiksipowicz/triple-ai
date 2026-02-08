@@ -66,9 +66,48 @@ triple-ai/
 - **Service Worker** — Central coordinator. Tracks frames by `{tabId, frameId}`. Routes text changes and submit events between frames.
 - **Sync Engine** — Shared module loaded alongside each adapter. Handles debouncing, echo-loop prevention, and message passing.
 
+## Security
+
+This extension removes certain HTTP security headers from AI chat domains to allow iframe embedding. Here's what you should know:
+
+**What headers are stripped and why:**
+
+- `X-Frame-Options` and `Content-Security-Policy` — these normally prevent a site from being embedded in an iframe. Removing them is required for the side-by-side layout to work.
+- `Cross-Origin-Opener-Policy`, `Cross-Origin-Embedder-Policy`, `Cross-Origin-Resource-Policy` — cross-origin isolation headers that block iframe embedding.
+
+**Mitigations in place:**
+
+- Header stripping is restricted to `sub_frame` requests only — visiting ChatGPT, Gemini, or Grok in a normal browser tab is **not affected**. All their security headers remain intact.
+- Content scripts (sync engine) only activate inside the TripleAI dashboard tab. They do nothing when you visit AI chat sites in normal tabs.
+- The extension does not collect, store, or transmit any of your conversation data. All sync happens locally between iframes in the same browser tab.
+
+## FAQ
+
+### My keyboard shortcut (`Ctrl+Shift+E` / `⌘+Shift+E`) is not working
+
+Chrome sometimes ignores the extension's suggested shortcut if another extension already uses it. To fix:
+
+1. Go to `chrome://extensions/shortcuts`
+2. Find **TripleAI**
+3. Click the pencil icon next to the shortcut field
+4. Press your desired shortcut (e.g., `Ctrl+Shift+E`)
+5. If Chrome warns about a conflict, confirm to override
+
+### I want a different keyboard shortcut
+
+1. Go to `chrome://extensions/shortcuts`
+2. Find **TripleAI**
+3. Click the pencil icon and press your preferred key combination
+4. Any valid combination works — Chrome will warn you if it conflicts with a built-in shortcut
+
+You can also always open the dashboard by clicking the TripleAI icon in the Chrome toolbar.
+
+### Does this extension make ChatGPT/Gemini/Grok less secure even when I'm not using the dashboard?
+
+**No.** The security header stripping only applies to `sub_frame` (iframe) requests. When you visit chatgpt.com, gemini.google.com, or grok.com in a normal browser tab, all their security headers (`Content-Security-Policy`, `X-Frame-Options`, etc.) are fully intact and enforced. The content scripts also detect whether they're running inside the dashboard and do nothing in normal tabs.
+
 ## Notes
 
-- The extension strips security headers from AI chat domains to allow iframe embedding. This only affects `sub_frame` requests (iframes), not regular tab navigation.
 - DOM selectors for each AI chat may need updating if the services change their interfaces.
 - Settings persist across browser restarts via `chrome.storage.local`.
 - Some AI services may have additional JavaScript-based iframe detection that could prevent embedding.
