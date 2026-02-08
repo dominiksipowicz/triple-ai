@@ -42,12 +42,12 @@
     "default_title": "TripleAI"
   },
   "commands": {
-    "open-all-chats": {
+    "_execute_action": {
       "suggested_key": {
-        "default": "Ctrl+Shift+A",
-        "mac": "Command+Shift+A"
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
       },
-      "description": "Open all enabled AI chat tabs"
+      "description": "Open TripleAI dashboard"
     }
   },
   "content_scripts": [

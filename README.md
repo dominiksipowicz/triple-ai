@@ -1,4 +1,4 @@
-# Multi-AI Chat Synchronizer
+# TripleAI
 
 A Chrome Extension that displays multiple AI chats side-by-side in a single page and synchronizes text input across all of them.
 
@@ -7,14 +7,15 @@ A Chrome Extension that displays multiple AI chats side-by-side in a single page
 - **Side-by-side view** — All enabled AI chats displayed as iframes in a split-pane layout on one page
 - **Synchronized typing** — Type in any AI chat and your text appears in all others in real-time
 - **Simultaneous submit** — Press Enter in one chat and all connected chats submit the same prompt
+- **Persistent sync** — Sync continues working across multiple conversation turns, surviving SPA navigation
 - **Configurable services** — Choose which AI chats to display from the settings panel:
-  - Google Gemini (`gemini.google.com/app`)
   - ChatGPT (`chatgpt.com`)
+  - Google Gemini (`gemini.google.com/app`)
   - Grok (`grok.com`)
   - Claude (`claude.ai`)
   - Perplexity (`perplexity.ai`)
 - **Sync toggle** — Disable sync for independent follow-up messages
-- **Keyboard shortcut** — `Ctrl+Shift+A` (Mac: `Cmd+Shift+A`) to open the dashboard
+- **Keyboard shortcut** — `Ctrl+Shift+E` (Mac: `⌘+Shift+E`) to open the dashboard
 
 ## Installation
 
@@ -23,6 +24,7 @@ A Chrome Extension that displays multiple AI chats side-by-side in a single page
 3. Click **Load unpacked**
 4. Select the `triple-ai` project folder
 5. Click the extension icon in the toolbar to open the dashboard
+6. Check Ctrl+Shift+E shortcut (if not working, try enabling it `chrome://extensions/shortcuts`
 
 ## Usage
 

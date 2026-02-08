@@ -40,7 +40,7 @@
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
       return el.value;
     }
-    return el.innerText || '';
+    return (el.innerText || '').replace(/\n$/, '');
   }
 
   function setText(text) {
@@ -95,6 +95,7 @@
 
   function observeInput(callback) {
     let lastText = '';
+    let observedEl = null;
 
     function check() {
       const current = getText();
@@ -108,7 +109,9 @@
 
     function startObserving() {
       const el = findInput();
-      if (el) {
+      if (!el) return false;
+      if (el !== observedEl) {
+        if (observedEl) observer.disconnect();
         if (el.tagName === 'TEXTAREA') {
           el.addEventListener('input', check);
           el.addEventListener('keyup', check);
@@ -116,18 +119,18 @@
           observer.observe(el, { childList: true, subtree: true, characterData: true });
           el.addEventListener('input', check);
         }
-        return true;
+        observedEl = el;
       }
-      return false;
+      return true;
     }
 
-    function tryStart() {
-      if (!startObserving()) {
-        setTimeout(tryStart, 500);
-      }
-    }
+    // Poll to re-attach after SPA navigation replaces the DOM node
+    setInterval(() => {
+      startObserving();
+      check();
+    }, 150);
 
-    tryStart();
+    startObserving();
     return observer;
   }
 

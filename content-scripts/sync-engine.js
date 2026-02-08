@@ -148,19 +148,19 @@
       }
     }
 
-    // Attach Enter key listener to the input when it appears
-    function attachEnterListener(retries = 40) {
+    // Attach Enter key listener — polls to re-attach after SPA navigation
+    let enterListenerEl = null;
+    function attachEnterListener() {
       const el = findInput();
-      if (el) {
+      if (el && el !== enterListenerEl) {
+        if (enterListenerEl) enterListenerEl.removeEventListener('keydown', handleKeydown, true);
         el.addEventListener('keydown', handleKeydown, true);
+        enterListenerEl = el;
         console.log(LOG_PREFIX, `[${serviceKey}] Enter listener attached to input`);
-      } else if (retries > 0) {
-        setTimeout(() => attachEnterListener(retries - 1), 500);
-      } else {
-        console.warn(LOG_PREFIX, `[${serviceKey}] Could not find input element for Enter listener`);
       }
     }
 
+    setInterval(attachEnterListener, 500);
     attachEnterListener();
 
     console.log(LOG_PREFIX, `Sync engine loaded for "${serviceKey}"`);

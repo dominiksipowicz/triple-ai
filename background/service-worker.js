@@ -308,14 +308,6 @@ chrome.action.onClicked.addListener(() => {
   openDashboard();
 });
 
-// --- Keyboard shortcut ---
-
-chrome.commands.onCommand.addListener((command) => {
-  if (command === 'open-all-chats') {
-    openDashboard();
-  }
-});
-
 // --- Init ---
 
 initState();
