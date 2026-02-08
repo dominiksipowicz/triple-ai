@@ -1,4 +1,6 @@
-# TripleAI
+# TripleAI <a href="https://v0.app/chat/api/open?title=Open+in+v0&prompt=This+code+is+a+Chrome+Extension+that+displays+multiple+AI+chats+side-by-side+in+a+single+page+and+synchronizes+text+input+across+all+of+them.+I+want+to+modify+it.+This+is+not+Next.js+application.+This+is+not+a+website+but+a+script+for+Chrome+Extension.+Do+not+show+preview+UI+or+build+the+project.+Wait+for+my+list+of+changes.+Read+README.md.&url=https%3A%2F%2Fgithub.com%2Fdominiksipowicz%2Ftriple-ai"><img src="https://v0.app/chat-static/button.svg" alt="Open in v0" align="right"></a>
+
+
 
 A Chrome Extension that displays multiple AI chats side-by-side in a single page and synchronizes text input across all of them.
 
