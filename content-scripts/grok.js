@@ -67,8 +67,12 @@
       range.selectNodeContents(el);
       selection.removeAllRanges();
       selection.addRange(range);
-      document.execCommand('insertText', false, text);
-      el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      if (text) {
+        document.execCommand('insertText', false, text);
+      } else {
+        document.execCommand('delete', false);
+      }
+      el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: text ? 'insertText' : 'deleteContentBackward' }));
     }
     return true;
   }

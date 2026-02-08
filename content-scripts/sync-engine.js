@@ -94,6 +94,8 @@
     observeInput((text) => {
       // Don't re-broadcast text we just received from sync
       if (text === lastSyncedText) return;
+      // Don't broadcast empty text — avoids triggering submit on other AIs
+      if (!text || !text.trim()) return;
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
@@ -110,6 +112,7 @@
       switch (message.type) {
         case 'SYNC_TEXT':
           if (!syncEnabled) break;
+          if (!message.text && !message.text?.trim()) break; // Skip empty syncs
           console.log(LOG_PREFIX, `[${serviceKey}] Received SYNC_TEXT, length=${message.text.length}`);
           lastSyncedText = message.text;
           setText(message.text);

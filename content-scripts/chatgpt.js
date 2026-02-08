@@ -39,8 +39,8 @@
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
       return el.value;
     }
-    // contenteditable
-    return el.innerText || '';
+    // contenteditable — trim trailing newlines from ProseMirror <p> blocks
+    return (el.innerText || '').replace(/\n$/, '');
   }
 
   function setText(text) {
@@ -69,8 +69,12 @@
       range.selectNodeContents(el);
       selection.removeAllRanges();
       selection.addRange(range);
-      document.execCommand('insertText', false, text);
-      el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      if (text) {
+        document.execCommand('insertText', false, text);
+      } else {
+        document.execCommand('delete', false);
+      }
+      el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: text ? 'insertText' : 'deleteContentBackward' }));
     }
     return true;
   }
@@ -94,6 +98,7 @@
 
   function observeInput(callback) {
     let lastText = '';
+    let observedEl = null;
 
     function check() {
       const current = getText();
@@ -103,28 +108,31 @@
       }
     }
 
-    // Watch for DOM changes (contenteditable mutations)
     const observer = new MutationObserver(check);
 
     function startObserving() {
       const el = findInput();
-      if (el) {
+      if (!el) return false;
+
+      // If the DOM node changed (ProseMirror re-renders), re-attach
+      if (el !== observedEl) {
+        if (observedEl) observer.disconnect();
         observer.observe(el, { childList: true, subtree: true, characterData: true });
         el.addEventListener('input', check);
         el.addEventListener('keyup', check);
-        return true;
+        observedEl = el;
       }
-      return false;
+      return true;
     }
 
-    // Retry until the input is found
-    function tryStart() {
-      if (!startObserving()) {
-        setTimeout(tryStart, 500);
-      }
-    }
+    // Poll to catch cases where MutationObserver misses changes
+    // and to re-attach if ProseMirror replaces the DOM node
+    setInterval(() => {
+      startObserving();
+      check();
+    }, 150);
 
-    tryStart();
+    startObserving();
     return observer;
   }
 
