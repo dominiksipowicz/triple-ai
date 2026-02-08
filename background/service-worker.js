@@ -6,6 +6,7 @@ const DEFAULT_SERVICES = {
   gemini: { name: 'Gemini', url: 'https://gemini.google.com/app', enabled: true },
   grok: { name: 'Grok', url: 'https://grok.com/', enabled: true },
   claude: { name: 'Claude', url: 'https://claude.ai/new', enabled: false },
+  v0: { name: 'v0', url: 'https://v0.app/', enabled: false },
 };
 
 // State
@@ -17,7 +18,10 @@ let dashboardTabId = null;
 
 async function getServices() {
   const result = await chrome.storage.local.get('services');
-  return result.services || DEFAULT_SERVICES;
+  if (!result.services) return DEFAULT_SERVICES;
+  // Merge in any new services added since last save
+  const merged = { ...DEFAULT_SERVICES, ...result.services };
+  return merged;
 }
 
 async function getSyncEnabled() {

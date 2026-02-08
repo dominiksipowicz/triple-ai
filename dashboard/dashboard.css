@@ -246,6 +246,7 @@ html, body {
 .service-dot.chatgpt { background: #10a37f; }
 .service-dot.grok { background: #1d1d1f; border: 1px solid var(--border); }
 .service-dot.claude { background: #d97706; }
+.service-dot.v0 { background: #000000; border: 1px solid var(--border); }
 
 .service-row-info {
   flex: 1;
