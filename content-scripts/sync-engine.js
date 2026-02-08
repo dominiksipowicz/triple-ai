@@ -2,7 +2,7 @@
 // Reads from window.__tripleAI set by the adapter, handles message passing with service worker
 
 (() => {
-  const LOG_PREFIX = '[TripleAI]';
+  const LOG_PREFIX = "[TripleAI]";
 
   // Prevent double-init from manifest content_scripts + programmatic injection
   if (window.__tripleAI_syncLoaded) return;
@@ -17,58 +17,83 @@
     if (retries > 0) {
       setTimeout(() => waitForAdapter(callback, retries - 1), 200);
     } else {
-      console.warn(LOG_PREFIX, 'No adapter found after retries. URL:', location.href);
+      console.warn(
+        LOG_PREFIX,
+        "No adapter found after retries. URL:",
+        location.href,
+      );
     }
   }
 
   waitForAdapter((adapter) => {
-    const { serviceKey, getText, setText, submit, observeInput, findInput } = adapter;
+    const { serviceKey, getText, setText, submit, observeInput, findInput } =
+      adapter;
 
     let syncEnabled = true;
     let lastSyncedText = null; // Track last synced text to prevent echo
+    let suppressBroadcast = false; // Suppress echo when receiving sync
     let debounceTimer = null;
-    const DEBOUNCE_MS = 80;
+    const DEBOUNCE_MS = 300;
 
-    console.log(LOG_PREFIX, `Sync engine starting for "${serviceKey}" in frame`, window.location.href);
+    console.log(
+      LOG_PREFIX,
+      `Sync engine starting for "${serviceKey}" in frame`,
+      window.location.href,
+    );
 
     // Register with service worker — only activate inside dashboard tab
     try {
       chrome.runtime.sendMessage(
-        { type: 'REGISTER', serviceKey },
+        { type: "REGISTER", serviceKey },
         (response) => {
           if (chrome.runtime.lastError) {
-            console.warn(LOG_PREFIX, 'Registration failed:', chrome.runtime.lastError.message);
+            console.warn(
+              LOG_PREFIX,
+              "Registration failed:",
+              chrome.runtime.lastError.message,
+            );
             return;
           }
           if (!response?.isDashboard) {
-            console.log(LOG_PREFIX, `"${serviceKey}" not in dashboard tab, sync disabled`);
+            console.log(
+              LOG_PREFIX,
+              `"${serviceKey}" not in dashboard tab, sync disabled`,
+            );
             return;
           }
           if (response?.syncEnabled !== undefined) {
             syncEnabled = response.syncEnabled;
           }
-          console.log(LOG_PREFIX, `Registered "${serviceKey}", sync=${syncEnabled}`);
+          console.log(
+            LOG_PREFIX,
+            `Registered "${serviceKey}", sync=${syncEnabled}`,
+          );
           startSync();
-        }
+        },
       );
     } catch (e) {
-      console.error(LOG_PREFIX, 'Failed to register:', e);
+      console.error(LOG_PREFIX, "Failed to register:", e);
       return;
     }
 
     // All sync logic is deferred until we confirm we're in the dashboard tab
     function startSync() {
+      // Snapshot existing text so stale drafts from the AI site's own
+      // storage are never broadcast to other frames on open
+      lastSyncedText = getText();
+
       // Observe local input changes and broadcast
       observeInput((text) => {
+        if (suppressBroadcast) return;
         if (text === lastSyncedText) return;
         if (!text || !text.trim()) return;
 
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           try {
-            chrome.runtime.sendMessage({ type: 'TEXT_CHANGED', text });
+            chrome.runtime.sendMessage({ type: "TEXT_CHANGED", text });
           } catch (e) {
-            console.warn(LOG_PREFIX, 'Failed to send TEXT_CHANGED:', e);
+            console.warn(LOG_PREFIX, "Failed to send TEXT_CHANGED:", e);
           }
         }, DEBOUNCE_MS);
       });
@@ -76,19 +101,23 @@
       // Listen for messages from service worker
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         switch (message.type) {
-          case 'SYNC_TEXT':
+          case "SYNC_TEXT":
             if (!syncEnabled) break;
             if (!message.text || !message.text.trim()) break;
             lastSyncedText = message.text;
+            suppressBroadcast = true;
             setText(message.text);
+            setTimeout(() => {
+              suppressBroadcast = false;
+            }, 100);
             break;
 
-          case 'DO_SUBMIT':
+          case "DO_SUBMIT":
             if (!syncEnabled) break;
             setTimeout(() => submit(), 100);
             break;
 
-          case 'SYNC_STATE_CHANGED':
+          case "SYNC_STATE_CHANGED":
             syncEnabled = message.syncEnabled;
             break;
         }
@@ -97,10 +126,16 @@
       // Intercept Enter key for synchronized submit
       function handleKeydown(e) {
         if (!syncEnabled) return;
-        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (
+          e.key === "Enter" &&
+          !e.shiftKey &&
+          !e.ctrlKey &&
+          !e.altKey &&
+          !e.metaKey
+        ) {
           setTimeout(() => {
             try {
-              chrome.runtime.sendMessage({ type: 'SUBMIT_TRIGGERED' });
+              chrome.runtime.sendMessage({ type: "SUBMIT_TRIGGERED" });
             } catch (err) {}
           }, 50);
         }
@@ -111,8 +146,9 @@
       function attachEnterListener() {
         const el = findInput();
         if (el && el !== enterListenerEl) {
-          if (enterListenerEl) enterListenerEl.removeEventListener('keydown', handleKeydown, true);
-          el.addEventListener('keydown', handleKeydown, true);
+          if (enterListenerEl)
+            enterListenerEl.removeEventListener("keydown", handleKeydown, true);
+          el.addEventListener("keydown", handleKeydown, true);
           enterListenerEl = el;
         }
       }
