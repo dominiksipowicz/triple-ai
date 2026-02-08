@@ -6,7 +6,6 @@ const DEFAULT_SERVICES = {
   gemini: { name: 'Gemini', url: 'https://gemini.google.com/app', enabled: true },
   grok: { name: 'Grok', url: 'https://grok.com/', enabled: true },
   claude: { name: 'Claude', url: 'https://claude.ai/new', enabled: false },
-  perplexity: { name: 'Perplexity', url: 'https://www.perplexity.ai/', enabled: false },
 };
 
 // Map hostnames to service keys and their adapter script files
@@ -15,7 +14,6 @@ const HOST_TO_SERVICE = {
   'gemini.google.com': { key: 'gemini', adapter: 'content-scripts/gemini.js' },
   'grok.com': { key: 'grok', adapter: 'content-scripts/grok.js' },
   'claude.ai': { key: 'claude', adapter: 'content-scripts/claude.js' },
-  'www.perplexity.ai': { key: 'perplexity', adapter: 'content-scripts/perplexity.js' },
 };
 
 // State

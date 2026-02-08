@@ -13,7 +13,6 @@ A Chrome Extension that displays multiple AI chats side-by-side in a single page
   - Google Gemini (`gemini.google.com/app`)
   - Grok (`grok.com`)
   - Claude (`claude.ai`)
-  - Perplexity (`perplexity.ai`)
 - **Sync toggle** — Disable sync for independent follow-up messages
 - **Keyboard shortcut** — `Ctrl+Shift+E` (Mac: `⌘+Shift+E`) to open the dashboard
 
@@ -48,7 +47,6 @@ triple-ai/
     gemini.js                 # Gemini DOM adapter
     grok.js                   # Grok DOM adapter
     claude.js                 # Claude DOM adapter
-    perplexity.js             # Perplexity DOM adapter
     sync-engine.js            # Shared sync logic
   dashboard/
     dashboard.html            # Full-screen split-pane iframe layout

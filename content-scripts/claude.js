@@ -36,20 +36,28 @@
   function getText() {
     const el = findInput();
     if (!el) return '';
-    return el.innerText || '';
+    // Trim trailing newlines from ProseMirror <p> blocks
+    return (el.innerText || '').replace(/\n$/, '');
   }
 
   function setText(text) {
     const el = findInput();
     if (!el) return false;
 
-    el.focus();
-    // ProseMirror uses <p> elements
-    el.innerHTML = '';
-    const p = document.createElement('p');
-    p.textContent = text;
-    el.appendChild(p);
-    el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    // ProseMirror contentEditable — use execCommand so the editor stays in sync
+    // Only focus if the document already has focus (avoid stealing from other iframes)
+    if (document.hasFocus()) el.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    if (text) {
+      document.execCommand('insertText', false, text);
+    } else {
+      document.execCommand('delete', false);
+    }
+    el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: text ? 'insertText' : 'deleteContentBackward' }));
     return true;
   }
 
@@ -71,6 +79,7 @@
 
   function observeInput(callback) {
     let lastText = '';
+    let observedEl = null;
 
     function check() {
       const current = getText();
@@ -84,21 +93,25 @@
 
     function startObserving() {
       const el = findInput();
-      if (el) {
+      if (!el) return false;
+
+      // If the DOM node changed (ProseMirror re-renders), re-attach
+      if (el !== observedEl) {
+        if (observedEl) observer.disconnect();
         observer.observe(el, { childList: true, subtree: true, characterData: true });
         el.addEventListener('input', check);
-        return true;
+        observedEl = el;
       }
-      return false;
+      return true;
     }
 
-    function tryStart() {
-      if (!startObserving()) {
-        setTimeout(tryStart, 500);
-      }
-    }
+    // Poll to re-attach after SPA navigation replaces the DOM node
+    setInterval(() => {
+      startObserving();
+      check();
+    }, 150);
 
-    tryStart();
+    startObserving();
     return observer;
   }
 

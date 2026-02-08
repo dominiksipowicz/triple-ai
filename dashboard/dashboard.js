@@ -5,10 +5,9 @@ const SERVICE_META = {
   gemini:     { name: 'Gemini',     icon: 'G', url: 'https://gemini.google.com/app' },
   grok:       { name: 'Grok',       icon: 'X', url: 'https://grok.com/' },
   claude:     { name: 'Claude',     icon: 'A', url: 'https://claude.ai/new' },
-  perplexity: { name: 'Perplexity', icon: 'P', url: 'https://www.perplexity.ai/' },
 };
 
-const SERVICE_ORDER = ['chatgpt', 'gemini', 'grok', 'claude', 'perplexity'];
+const SERVICE_ORDER = ['chatgpt', 'gemini', 'grok', 'claude'];
 
 let services = {};
 

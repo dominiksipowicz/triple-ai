@@ -17,8 +17,7 @@
     "https://gemini.google.com/*",
     "https://*.google.com/*",
     "https://grok.com/*",
-    "https://claude.ai/*",
-    "https://www.perplexity.ai/*"
+    "https://claude.ai/*"
   ],
   "declarative_net_request": {
     "rule_resources": [
@@ -74,13 +73,6 @@
     {
       "matches": ["https://claude.ai/*"],
       "js": ["content-scripts/claude.js", "content-scripts/sync-engine.js"],
-      "run_at": "document_idle",
-      "all_frames": true,
-      "match_about_blank": true
-    },
-    {
-      "matches": ["https://www.perplexity.ai/*"],
-      "js": ["content-scripts/perplexity.js", "content-scripts/sync-engine.js"],
       "run_at": "document_idle",
       "all_frames": true,
       "match_about_blank": true

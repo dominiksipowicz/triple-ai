@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Multi-AI Chat Synchronizer — a Chrome Extension (Manifest V3) that displays multiple AI chat interfaces (Gemini, ChatGPT, Grok, Claude, Perplexity) side-by-side in iframes on a single dashboard page, synchronizing text input and submitting prompts simultaneously.
+TripleAI — a Chrome Extension (Manifest V3) that displays multiple AI chat interfaces (ChatGPT, Gemini, Grok, Claude) side-by-side in iframes on a single dashboard page, synchronizing text input and submitting prompts simultaneously.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ Chrome Extension with four layers:
 
 2. **Header Stripping** (`rules.json`): `declarativeNetRequest` rules that remove `X-Frame-Options` and `Content-Security-Policy` headers from AI chat domains for `sub_frame` requests, allowing iframe embedding.
 
-3. **Content Scripts** (`content-scripts/`): Site-specific DOM adapters (`chatgpt.js`, `gemini.js`, `grok.js`, `claude.js`, `perplexity.js`) plus shared `sync-engine.js`. Declared with `all_frames: true` so they inject into iframes. Each adapter exposes `findInput()`, `getText()`, `setText()`, `submit()`, `observeInput()` via `window.__tripleAI`.
+3. **Content Scripts** (`content-scripts/`): Site-specific DOM adapters (`chatgpt.js`, `gemini.js`, `grok.js`, `claude.js`) plus shared `sync-engine.js`. Declared with `all_frames: true` so they inject into iframes. Each adapter exposes `findInput()`, `getText()`, `setText()`, `submit()`, `observeInput()` via `window.__tripleAI`.
 
 4. **Service Worker** (`background/service-worker.js`): Tracks frames by `{tabId, frameId}` (since all iframes share the same tab). Routes `TEXT_CHANGED` and `SUBMIT_TRIGGERED` messages between frames using `chrome.tabs.sendMessage` with `frameId` option.
 
