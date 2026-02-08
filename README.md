@@ -2,6 +2,9 @@
 
 A Chrome Extension that displays multiple AI chats side-by-side in a single page and synchronizes text input across all of them.
 
+<img width="1795" height="1198" alt="CleanShot 2026-02-08 at 00 59 52" src="https://github.com/user-attachments/assets/57a0ad7e-13bb-48a5-b6e8-17b8a719a498" />
+
+
 ## Features
 
 - **Side-by-side view** — All enabled AI chats displayed as iframes in a split-pane layout on one page
@@ -24,6 +27,8 @@ A Chrome Extension that displays multiple AI chats side-by-side in a single page
 4. Select the `triple-ai` project folder
 5. Click the extension icon in the toolbar to open the dashboard
 6. Check Ctrl+Shift+E shortcut (if not working, try enabling it `chrome://extensions/shortcuts`
+
+<img width="778" height="507" alt="CleanShot 2026-02-08 at 00 57 59" src="https://github.com/user-attachments/assets/7fed123b-bcd4-48e4-be80-712a85e1f2ef" />
 
 ## Usage
 
