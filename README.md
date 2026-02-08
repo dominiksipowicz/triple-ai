@@ -34,12 +34,13 @@ You can ask v0 to open this repository make changes and you can follow below ins
 
 ## Installation
 
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable **Developer mode** (toggle in top-right)
-3. Click **Load unpacked**
-4. Select the `triple-ai` project folder
-5. Click the extension icon in the toolbar to open the dashboard
-6. Check Ctrl+Shift+E shortcut (if not working, try enabling it `chrome://extensions/shortcuts`
+1. Download this repo as ZIP file
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable **Developer mode** (toggle in top-right)
+4. Click **Load unpacked**
+5. Select the `triple-ai` project folder
+6. Done. to use it click the extension icon in the toolbar and pin it
+7. Check Ctrl+Shift+E shortcut (if not working, try enabling it `chrome://extensions/shortcuts`
 
 <img width="778" height="507" alt="CleanShot 2026-02-08 at 00 57 59" src="https://github.com/user-attachments/assets/7fed123b-bcd4-48e4-be80-712a85e1f2ef" />
 
