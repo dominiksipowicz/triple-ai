@@ -6,6 +6,7 @@ const DEFAULT_SERVICES = {
   gemini: { name: 'Gemini', url: 'https://gemini.google.com/app', enabled: true },
   grok: { name: 'Grok', url: 'https://grok.com/', enabled: true },
   claude: { name: 'Claude', url: 'https://claude.ai/new', enabled: false },
+  perplexity: { name: 'Perplexity', url: 'https://www.perplexity.ai/', enabled: false },
 };
 
 // State
