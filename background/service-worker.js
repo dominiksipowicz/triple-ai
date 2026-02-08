@@ -8,19 +8,10 @@ const DEFAULT_SERVICES = {
   claude: { name: 'Claude', url: 'https://claude.ai/new', enabled: false },
 };
 
-// Map hostnames to service keys and their adapter script files
-const HOST_TO_SERVICE = {
-  'chatgpt.com': { key: 'chatgpt', adapter: 'content-scripts/chatgpt.js' },
-  'gemini.google.com': { key: 'gemini', adapter: 'content-scripts/gemini.js' },
-  'grok.com': { key: 'grok', adapter: 'content-scripts/grok.js' },
-  'claude.ai': { key: 'claude', adapter: 'content-scripts/claude.js' },
-};
-
 // State
 let managedFrames = []; // { tabId, frameId, serviceKey }
 let syncEnabled = true;
 let dashboardTabId = null;
-let injectedFrames = new Set(); // Track "tabId:frameId" to avoid double-injection
 
 // --- Storage helpers ---
 
@@ -53,72 +44,11 @@ function unregisterFrame(tabId, frameId) {
   managedFrames = managedFrames.filter(
     (f) => !(f.tabId === tabId && f.frameId === frameId)
   );
-  injectedFrames.delete(`${tabId}:${frameId}`);
   notifyDashboard();
 }
 
 function unregisterAllForTab(tabId) {
   managedFrames = managedFrames.filter((f) => f.tabId !== tabId);
-  // Clean up injectedFrames for this tab
-  for (const key of [...injectedFrames]) {
-    if (key.startsWith(`${tabId}:`)) injectedFrames.delete(key);
-  }
-}
-
-// --- Programmatic script injection ---
-
-async function injectIntoFrame(tabId, frameId, hostname) {
-  const frameKey = `${tabId}:${frameId}`;
-  if (injectedFrames.has(frameKey)) {
-    console.log(`[TripleAI SW] Already injected into frame ${frameKey}, skipping`);
-    return;
-  }
-
-  const service = HOST_TO_SERVICE[hostname];
-  if (!service) return;
-
-  console.log(`[TripleAI SW] Injecting scripts into frame ${frameId} (tab ${tabId}) for ${service.key}`);
-
-  try {
-    // Inject the site-specific adapter first
-    await chrome.scripting.executeScript({
-      target: { tabId, frameIds: [frameId] },
-      files: [service.adapter],
-    });
-
-    // Then inject the sync engine
-    await chrome.scripting.executeScript({
-      target: { tabId, frameIds: [frameId] },
-      files: ['content-scripts/sync-engine.js'],
-    });
-
-    injectedFrames.add(frameKey);
-    console.log(`[TripleAI SW] Successfully injected into ${service.key} (frame ${frameId})`);
-  } catch (e) {
-    console.warn(`[TripleAI SW] Failed to inject into frame ${frameId}:`, e.message);
-  }
-}
-
-// Scan all frames in a tab and inject into matching ones
-async function injectIntoAllFrames(tabId) {
-  try {
-    const frames = await chrome.webNavigation.getAllFrames({ tabId });
-    if (!frames) return;
-
-    for (const frame of frames) {
-      if (frame.frameId === 0) continue; // Skip top-level frame (dashboard itself)
-      try {
-        const url = new URL(frame.url);
-        if (HOST_TO_SERVICE[url.hostname]) {
-          await injectIntoFrame(tabId, frame.frameId, url.hostname);
-        }
-      } catch {
-        // Invalid URL, skip
-      }
-    }
-  } catch (e) {
-    console.warn('[TripleAI SW] Failed to enumerate frames:', e.message);
-  }
 }
 
 // --- Dashboard ---
@@ -265,23 +195,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ services: svcs });
       });
       return true;
-  }
-});
-
-// --- Automatic injection when frames navigate ---
-
-chrome.webNavigation.onCompleted.addListener((details) => {
-  // Skip top-level frames
-  if (details.frameId === 0) return;
-
-  try {
-    const url = new URL(details.url);
-    if (HOST_TO_SERVICE[url.hostname]) {
-      console.log(`[TripleAI SW] Frame navigation completed: ${url.hostname} (tab ${details.tabId}, frame ${details.frameId})`);
-      injectIntoFrame(details.tabId, details.frameId, url.hostname);
-    }
-  } catch {
-    // Invalid URL
   }
 });
 
