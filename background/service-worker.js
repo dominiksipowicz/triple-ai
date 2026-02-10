@@ -13,6 +13,7 @@ const DEFAULT_SERVICES = {
 let managedFrames = []; // { tabId, frameId, serviceKey }
 let syncEnabled = true;
 let dashboardTabId = null;
+let titleTimers = new Map(); // tabId -> timerId
 
 // --- Storage helpers ---
 
@@ -128,6 +129,28 @@ function broadcastSubmit(senderTabId, senderFrameId) {
   }
 }
 
+function startTitleTimer(senderTabId) {
+  // Clear existing timer for this tab
+  if (titleTimers.has(senderTabId)) {
+    clearTimeout(titleTimers.get(senderTabId));
+  }
+
+  // Set new 10-second timer
+  const timerId = setTimeout(() => {
+    // Send title update request to dashboard
+    if (dashboardTabId) {
+      chrome.tabs.sendMessage(dashboardTabId, {
+        type: 'UPDATE_TITLE'
+      }).catch(() => {
+        console.log('[TripleAI SW] Failed to send title update to dashboard');
+      });
+    }
+    titleTimers.delete(senderTabId);
+  }, 10000); // 10 seconds
+
+  titleTimers.set(senderTabId, timerId);
+}
+
 // --- Message handling ---
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -158,6 +181,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'SUBMIT_TRIGGERED':
       if (tabId !== undefined) {
         broadcastSubmit(tabId, frameId);
+        startTitleTimer(tabId);
       }
       break;
 
@@ -211,6 +235,12 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     return;
   }
   unregisterAllForTab(tabId);
+  
+  // Clear any title timers for this tab
+  if (titleTimers.has(tabId)) {
+    clearTimeout(titleTimers.get(tabId));
+    titleTimers.delete(tabId);
+  }
 });
 
 // --- Extension icon click -> open dashboard ---

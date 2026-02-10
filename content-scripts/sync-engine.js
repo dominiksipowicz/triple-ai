@@ -156,6 +156,19 @@
       setInterval(attachEnterListener, 500);
       attachEnterListener();
 
+      // Handle title requests from dashboard via postMessage
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'REQUEST_TITLE' && event.data.service === serviceKey) {
+          const title = document.title;
+          // Send title back to parent window
+          window.parent.postMessage({
+            type: 'TITLE_RESPONSE',
+            service: serviceKey,
+            title: title
+          }, '*');
+        }
+      });
+
       console.log(LOG_PREFIX, `Sync engine active for "${serviceKey}"`);
     }
   });
