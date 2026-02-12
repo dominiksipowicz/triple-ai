@@ -5,7 +5,6 @@
   "description": "TripleAI — display multiple AI chats side-by-side, synchronize input and submit simultaneously.",
   "permissions": [
     "storage",
-    "tabs",
     "declarativeNetRequest"
   ],
   "host_permissions": [

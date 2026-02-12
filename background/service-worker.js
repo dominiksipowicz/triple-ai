@@ -32,6 +32,16 @@ async function getSyncEnabled() {
 
 async function initState() {
   syncEnabled = await getSyncEnabled();
+  const result = await chrome.storage.local.get('dashboardTabId');
+  if (result.dashboardTabId) {
+    try {
+      await chrome.tabs.get(result.dashboardTabId);
+      dashboardTabId = result.dashboardTabId;
+    } catch {
+      dashboardTabId = null;
+      await chrome.storage.local.remove('dashboardTabId');
+    }
+  }
 }
 
 // --- Frame management ---
@@ -69,6 +79,7 @@ async function openDashboard() {
       }
     } catch {
       dashboardTabId = null;
+      chrome.storage.local.remove('dashboardTabId');
     }
   }
 
@@ -76,6 +87,7 @@ async function openDashboard() {
     url: chrome.runtime.getURL('dashboard/dashboard.html'),
   });
   dashboardTabId = tab.id;
+  chrome.storage.local.set({ dashboardTabId });
 }
 
 function notifyDashboard() {
@@ -160,12 +172,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case 'REGISTER':
       if (tabId && message.serviceKey) {
-        // Check if the sender is in the dashboard tab by URL (survives extension reloads)
+        // Primary: match against known dashboardTabId (persisted in storage)
+        // Fallback: check sender.tab.url for recovery after SW restart
         const dashboardUrl = chrome.runtime.getURL('dashboard/');
-        const isDashboard = sender.tab?.url?.startsWith(dashboardUrl);
+        const isDashboard = (dashboardTabId !== null && tabId === dashboardTabId)
+          || sender.tab?.url?.startsWith(dashboardUrl);
         if (isDashboard) {
-          // Keep dashboardTabId in sync
-          if (dashboardTabId !== tabId) dashboardTabId = tabId;
+          if (dashboardTabId !== tabId) {
+            dashboardTabId = tabId;
+            chrome.storage.local.set({ dashboardTabId });
+          }
           registerFrame(tabId, frameId, message.serviceKey);
         }
         sendResponse({ syncEnabled, isDashboard });
@@ -231,6 +247,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (tabId === dashboardTabId) {
     dashboardTabId = null;
+    chrome.storage.local.remove('dashboardTabId');
     unregisterAllForTab(tabId);
     return;
   }
