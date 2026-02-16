@@ -176,9 +176,21 @@ function renderIframes() {
   // Update title manager with current enabled services
   titleManager.setEnabledServices(enabledKeys);
 
+  // Add the date bar
+  const dateBar = document.createElement('div');
+  dateBar.className = 'date-bar';
+  dateBar.id = 'dateBar';
+  dateBar.textContent = formatCurrentDate();
+  container.appendChild(dateBar);
+
+  // Start a timer to keep the date current
+  startDateTimer();
+
   if (enabledKeys.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
+    container.innerHTML = '';
+    container.appendChild(dateBar);
+    container.insertAdjacentHTML('beforeend', `
+      <div class="empty-state" style="width:100%">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
           <line x1="8" y1="21" x2="16" y2="21"/>
@@ -187,10 +199,15 @@ function renderIframes() {
         <p>No AI services enabled</p>
         <button class="btn" id="emptySettingsBtn">Open Settings</button>
       </div>
-    `;
+    `);
     document.getElementById('emptySettingsBtn')?.addEventListener('click', openSettings);
     return;
   }
+
+  // Create a row wrapper for the panes
+  const panesRow = document.createElement('div');
+  panesRow.className = 'iframe-panes-row';
+  container.appendChild(panesRow);
 
   for (const key of enabledKeys) {
     const meta = SERVICE_META[key];
@@ -212,7 +229,7 @@ function renderIframes() {
       ></iframe>
     `;
 
-    container.appendChild(pane);
+    panesRow.appendChild(pane);
 
     const iframe = pane.querySelector(`#iframe-${key}`);
     iframe.addEventListener('load', () => {
@@ -324,6 +341,31 @@ document.getElementById('settingsOverlay').addEventListener('click', (e) => {
     closeSettings();
   }
 });
+
+// --- Date helpers ---
+
+function formatCurrentDate() {
+  const now = new Date();
+  return now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+let dateTimerId = null;
+
+function startDateTimer() {
+  if (dateTimerId) clearInterval(dateTimerId);
+  // Check every minute if the date has changed
+  dateTimerId = setInterval(() => {
+    const dateBar = document.getElementById('dateBar');
+    if (dateBar) {
+      dateBar.textContent = formatCurrentDate();
+    }
+  }, 60000);
+}
 
 // --- Start ---
 
